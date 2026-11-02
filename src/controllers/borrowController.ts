@@ -1,7 +1,7 @@
-import { Response } from 'express';
+import type { Response } from 'express';
 import { Book } from '../models/Book.js';
 import { Borrow } from '../models/Borrow.js';
-import { AuthRequest } from '../middleware/authMiddleware.js';
+import type { AuthRequest } from '../middleware/authMiddleware.js';
 
 export async function borrowBook(
   req: AuthRequest,
@@ -213,23 +213,10 @@ export async function returnBook(
       return;
     }
 
-    const bookUpdate = await Book.updateOne(
+    await Book.updateOne(
       { _id: borrowRecord.bookId },
       { $inc: { availableCopies: 1 } }
     );
-
-    if (bookUpdate.matchedCount === 0) {
-      await Borrow.updateOne(
-        { _id: borrowRecord._id },
-        { $set: { status: 'borrowed' } }
-      );
-
-      res.status(404).json({
-        success: false,
-        message: 'Book not found.'
-      });
-      return;
-    }
 
     res.json({
       success: true,
