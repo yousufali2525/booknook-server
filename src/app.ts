@@ -11,8 +11,11 @@ import { MongoClient, ObjectId } from 'mongodb';
 
 const app = express();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'booknook_jwt_super_secret_key_2026';
+const JWT_SECRET = process.env.JWT_SECRET;
 
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET is not configured in the .env file");
+}
 app.use(cors({
   origin: '*',
   credentials: true

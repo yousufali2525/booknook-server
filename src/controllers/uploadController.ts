@@ -13,8 +13,9 @@ export const uploadImage = async (req: Request, res: Response) => {
     }
 
     const apiKey = process.env.IMGBB_API_KEY;
+    const apiUrl = process.env.IMGBB_API_URL;
 
-    if (!apiKey) {
+    if (!apiKey || !apiUrl) {
       res.status(500).json({
         success: false,
         message: "Image upload configuration is missing.",
@@ -23,15 +24,19 @@ export const uploadImage = async (req: Request, res: Response) => {
     }
 
     const formData = new FormData();
-    formData.append("image", image.replace(/^data:image\/\w+;base64,/, ""));
 
-    const response = await fetch(
-      `https://api.imgbb.com/1/upload?key=${apiKey}`,
-      {
-        method: "POST",
-        body: formData,
-      }
+    formData.append(
+      "image",
+      image.replace(/^data:image\/\w+;base64,/, "")
     );
+
+    const uploadUrl = new URL(apiUrl);
+    uploadUrl.searchParams.set("key", apiKey);
+
+    const response = await fetch(uploadUrl.toString(), {
+      method: "POST",
+      body: formData,
+    });
 
     const result = await response.json();
 

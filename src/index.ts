@@ -13,7 +13,7 @@ import uploadRoutes from './routes/uploadRoutes.js';
 
 const app = express();
 
-const PORT = Number(process.env.PORT) || 5000;
+const PORT = Number(process.env.PORT);
 const MONGO_URI = process.env.MONGODB_URI;
 const CLIENT_URL = process.env.CLIENT_URL;
 
@@ -25,10 +25,7 @@ if (!CLIENT_URL) {
   throw new Error('CLIENT_URL is missing from .env file');
 }
 
-const allowedOrigins = [
-  'http://localhost:3000',
-  CLIENT_URL,
-];
+const allowedOrigins = [CLIENT_URL];
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
