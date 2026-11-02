@@ -15,17 +15,42 @@ const app = express();
 
 const PORT = Number(process.env.PORT) || 5000;
 const MONGO_URI = process.env.MONGODB_URI;
+const CLIENT_URL = process.env.CLIENT_URL;
 
 if (!MONGO_URI) {
   throw new Error('MONGODB_URI is missing from .env file');
 }
 
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:3000',
-    credentials: true,
-  })
-);
+if (!CLIENT_URL) {
+  throw new Error('CLIENT_URL is missing from .env file');
+}
+
+const allowedOrigins = [
+  'http://localhost:3000',
+  CLIENT_URL,
+];
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    const isVercelPreview =
+      /^https:\/\/booknook-[a-z0-9-]+-22-cc8a\.vercel\.app$/.test(origin);
+
+    if (isVercelPreview) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json({ limit: '10mb' }));
 
@@ -51,7 +76,7 @@ const startServer = async () => {
     console.log('MongoDB Connected Successfully!');
 
     app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
     console.error('Server Error:', error);
