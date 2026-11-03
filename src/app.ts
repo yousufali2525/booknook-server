@@ -1,18 +1,13 @@
 import dns from 'dns';
 dns.setServers(['8.8.8.8', '8.8.4.4']);
-
 import dotenv from 'dotenv';
 dotenv.config();
-
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import { MongoClient, ObjectId } from 'mongodb';
-
 const app = express();
-
 const JWT_SECRET = process.env.JWT_SECRET;
-
 if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not configured in the .env file");
 }
@@ -21,7 +16,6 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
-
 interface Book {
   _id: string;
   title: string;
@@ -36,7 +30,6 @@ interface Book {
   rating?: number;
   createdAt: string;
 }
-
 interface Borrow {
   _id: string;
   bookId: string;
@@ -48,7 +41,6 @@ interface Borrow {
   returnDate: string;
   createdAt: string;
 }
-
 interface User {
   _id: string;
   name: string;
@@ -57,7 +49,6 @@ interface User {
   photoUrl?: string;
   createdAt: string;
 }
-
 const initial20Books: Book[] = [
   {
     _id: "book_01",
@@ -340,7 +331,6 @@ const initial20Books: Book[] = [
     createdAt: "2026-10-11T10:00:00.000Z"
   }
 ];
-
 let inMemoryBooks: Book[] = [...initial20Books];
 let inMemoryBorrows: Borrow[] = [];
 let inMemoryUsers: User[] = [
@@ -352,10 +342,8 @@ let inMemoryUsers: User[] = [
     createdAt: "2026-10-01T00:00:00.000Z"
   }
 ];
-
 let db: any = null;
 const MONGODB_URI = process.env.MONGODB_URI;
-
 if (MONGODB_URI) {
   MongoClient.connect(MONGODB_URI)
     .then(async (client) => {
@@ -371,7 +359,6 @@ if (MONGODB_URI) {
       console.error('MongoDB Connection Error:', err);
     });
 }
-
 export const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
@@ -385,15 +372,12 @@ export const verifyToken = (req: Request, res: Response, next: NextFunction) => 
   }
   next();
 };
-
 app.use(verifyToken);
-
 const handleGetBooks = async (req: Request, res: Response) => {
   try {
     const limitParam = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
     const categoryParam = req.query.category as string | undefined;
     const userEmailParam = req.query.userEmail as string | undefined;
-
     if (db) {
       let query: any = {};
       if (categoryParam && categoryParam !== 'All') {
@@ -402,7 +386,6 @@ const handleGetBooks = async (req: Request, res: Response) => {
       if (userEmailParam) {
         query.userEmail = userEmailParam.toLowerCase();
       }
-
       let cursor = db.collection('books').find(query).sort({ createdAt: -1 });
       if (limitParam) {
         cursor = cursor.limit(limitParam);
@@ -410,7 +393,6 @@ const handleGetBooks = async (req: Request, res: Response) => {
       const books = await cursor.toArray();
       return res.json(books);
     }
-
     let result = [...inMemoryBooks];
     if (categoryParam && categoryParam !== 'All') {
       result = result.filter(b => b.category.toLowerCase() === categoryParam.toLowerCase());
@@ -427,14 +409,11 @@ const handleGetBooks = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
 app.get('/books', handleGetBooks);
 app.get('/api/books', handleGetBooks);
-
 const handleGetBookById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
     if (db) {
       let filter: any = { _id: id };
       if (ObjectId.isValid(id)) {
@@ -446,7 +425,6 @@ const handleGetBookById = async (req: Request, res: Response) => {
       }
       return res.json(book);
     }
-
     const book = inMemoryBooks.find(b => b._id === id);
     if (!book) {
       return res.status(404).json({ error: "Book not found" });
@@ -456,20 +434,16 @@ const handleGetBookById = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
 app.get('/books/:id', handleGetBookById);
 app.get('/api/books/:id', handleGetBookById);
-
 const handleCreateBook = async (req: Request, res: Response) => {
   try {
     const { title, author, category, image, description, totalCopies, availableCopies, userName, userEmail } = req.body;
     if (!title || !author || !category || !image || !description) {
       return res.status(400).json({ error: "Title, author, category, image, and description are required." });
     }
-
     const parsedTotal = Number(totalCopies) || 1;
     const parsedAvailable = availableCopies !== undefined ? Number(availableCopies) : parsedTotal;
-
     const newBook: Book = {
       _id: Date.now().toString(),
       title,
@@ -484,35 +458,29 @@ const handleCreateBook = async (req: Request, res: Response) => {
       rating: 5.0,
       createdAt: new Date().toISOString()
     };
-
     if (db) {
       const result = await db.collection('books').insertOne(newBook);
       return res.status(201).json({ ...newBook, _id: result.insertedId.toString() });
     }
-
     inMemoryBooks.unshift(newBook);
     return res.status(201).json(newBook);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
 };
-
 app.post('/books', handleCreateBook);
 app.post('/api/books', handleCreateBook);
-
 const handleUpdateBook = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const updateData = { ...req.body };
     delete updateData._id;
-
     if (updateData.totalCopies !== undefined) {
       updateData.totalCopies = Number(updateData.totalCopies);
     }
     if (updateData.availableCopies !== undefined) {
       updateData.availableCopies = Number(updateData.availableCopies);
     }
-
     if (db) {
       let filter: any = { _id: id };
       if (ObjectId.isValid(id)) {
@@ -528,26 +496,21 @@ const handleUpdateBook = async (req: Request, res: Response) => {
       }
       return res.json(result);
     }
-
     const index = inMemoryBooks.findIndex(b => b._id === id);
     if (index === -1) {
       return res.status(404).json({ error: "Book not found" });
     }
-
     inMemoryBooks[index] = { ...inMemoryBooks[index], ...updateData };
     return res.json(inMemoryBooks[index]);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
 };
-
 app.patch('/books/:id', handleUpdateBook);
 app.patch('/api/books/:id', handleUpdateBook);
-
 const handleDeleteBook = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
     if (db) {
       let filter: any = { _id: id };
       if (ObjectId.isValid(id)) {
@@ -559,59 +522,47 @@ const handleDeleteBook = async (req: Request, res: Response) => {
       }
       return res.json({ success: true, message: "Book deleted successfully" });
     }
-
     const index = inMemoryBooks.findIndex(b => b._id === id);
     if (index === -1) {
       return res.status(404).json({ error: "Book not found" });
     }
-
     inMemoryBooks.splice(index, 1);
     return res.json({ success: true, message: "Book deleted successfully" });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
 };
-
 app.delete('/books/:id', handleDeleteBook);
 app.delete('/api/books/:id', handleDeleteBook);
-
 const handleBorrowBook = async (req: Request, res: Response) => {
   try {
     const { bookId, userEmail, userName, returnDate } = req.body;
     if (!bookId || !userEmail || !returnDate) {
       return res.status(400).json({ error: "Book ID, User Email, and Return Date are required to borrow." });
     }
-
     const normalizedEmail = userEmail.toLowerCase();
-
     if (db) {
       let bookFilter: any = { _id: bookId };
       if (ObjectId.isValid(bookId)) {
         bookFilter = { $or: [{ _id: new ObjectId(bookId) }, { _id: bookId }] };
       }
-
       const existingBorrow = await db.collection('borrows').findOne({
         bookId: bookId,
         userEmail: normalizedEmail
       });
-
       if (existingBorrow) {
         return res.status(400).json({
           error: "You have already borrowed this book! Return it before borrowing again."
         });
       }
-
       const targetBook = await db.collection('books').findOne(bookFilter);
       if (!targetBook) {
         return res.status(404).json({ error: "Book not found" });
       }
-
       if (targetBook.availableCopies <= 0) {
         return res.status(400).json({ error: "Not Available. All copies are currently borrowed." });
       }
-
       await db.collection('books').updateOne(bookFilter, { $inc: { availableCopies: -1 } });
-
       const newBorrow: Borrow = {
         _id: new ObjectId().toString(),
         bookId,
@@ -623,11 +574,9 @@ const handleBorrowBook = async (req: Request, res: Response) => {
         returnDate,
         createdAt: new Date().toISOString()
       };
-
       await db.collection('borrows').insertOne(newBorrow);
       return res.status(201).json(newBorrow);
     }
-
     const alreadyBorrowed = inMemoryBorrows.some(
       b => b.bookId === bookId && b.userEmail.toLowerCase() === normalizedEmail
     );
@@ -636,7 +585,6 @@ const handleBorrowBook = async (req: Request, res: Response) => {
         error: "You have already borrowed this book! Return it before borrowing again."
       });
     }
-
     const targetBook = inMemoryBooks.find(b => b._id === bookId);
     if (!targetBook) {
       return res.status(404).json({ error: "Book not found" });
@@ -644,9 +592,7 @@ const handleBorrowBook = async (req: Request, res: Response) => {
     if (targetBook.availableCopies <= 0) {
       return res.status(400).json({ error: "Not Available. All copies are currently borrowed." });
     }
-
     targetBook.availableCopies -= 1;
-
     const newBorrow: Borrow = {
       _id: Date.now().toString(),
       bookId,
@@ -658,21 +604,17 @@ const handleBorrowBook = async (req: Request, res: Response) => {
       returnDate,
       createdAt: new Date().toISOString()
     };
-
     inMemoryBorrows.unshift(newBorrow);
     return res.status(201).json(newBorrow);
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
 };
-
 app.post('/borrows', handleBorrowBook);
 app.post('/api/borrows', handleBorrowBook);
-
 const handleGetBorrows = async (req: Request, res: Response) => {
   try {
     const userEmail = (req.query.email as string || (req as any).user?.email || '').toLowerCase();
-
     if (db) {
       let query: any = {};
       if (userEmail) {
@@ -681,7 +623,6 @@ const handleGetBorrows = async (req: Request, res: Response) => {
       const borrows = await db.collection('borrows').find(query).sort({ createdAt: -1 }).toArray();
       return res.json(borrows);
     }
-
     let result = [...inMemoryBorrows];
     if (userEmail) {
       result = result.filter(b => b.userEmail.toLowerCase() === userEmail);
@@ -691,14 +632,11 @@ const handleGetBorrows = async (req: Request, res: Response) => {
     return res.status(500).json({ error: error.message });
   }
 };
-
 app.get('/borrows', handleGetBorrows);
 app.get('/api/borrows', handleGetBorrows);
-
 const handleReturnBook = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-
     if (db) {
       let filter: any = { _id: id };
       if (ObjectId.isValid(id)) {
@@ -708,44 +646,35 @@ const handleReturnBook = async (req: Request, res: Response) => {
       if (!borrow) {
         return res.status(404).json({ error: "Borrow record not found" });
       }
-
       await db.collection('borrows').deleteOne(filter);
-
       let bookFilter: any = { _id: borrow.bookId };
       if (ObjectId.isValid(borrow.bookId)) {
         bookFilter = { $or: [{ _id: new ObjectId(borrow.bookId) }, { _id: borrow.bookId }] };
       }
       await db.collection('books').updateOne(bookFilter, { $inc: { availableCopies: 1 } });
-
       return res.json({ success: true, message: "Book returned successfully" });
     }
-
     const index = inMemoryBorrows.findIndex(b => b._id === id);
     if (index === -1) {
       return res.status(404).json({ error: "Borrow record not found" });
     }
-
     const [borrow] = inMemoryBorrows.splice(index, 1);
     const targetBook = inMemoryBooks.find(b => b._id === borrow.bookId);
     if (targetBook) {
       targetBook.availableCopies += 1;
     }
-
     return res.json({ success: true, message: "Book returned successfully" });
   } catch (error: any) {
     return res.status(500).json({ error: error.message });
   }
 };
-
 app.delete('/borrows/:id', handleReturnBook);
 app.delete('/api/borrows/:id', handleReturnBook);
-
 app.post('/api/auth/register', async (req: Request, res: Response) => {
   const { name, email, password, photoUrl } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ error: "Name, email and password are required" });
   }
-
   if (password.length < 6) {
     return res.status(400).json({ error: "Password must be at least 6 characters long." });
   }
@@ -755,15 +684,12 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
   if (!/[a-z]/.test(password)) {
     return res.status(400).json({ error: "Password must have at least one lowercase letter." });
   }
-
   const normalizedEmail = email.toLowerCase();
-
   if (db) {
     const existing = await db.collection('users').findOne({ email: normalizedEmail });
     if (existing) {
       return res.status(400).json({ error: "User already exists with this email" });
     }
-
     const newUser = {
       name,
       email: normalizedEmail,
@@ -771,10 +697,8 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
       photoUrl: photoUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
       createdAt: new Date().toISOString()
     };
-
     const result = await db.collection('users').insertOne(newUser);
     const token = jwt.sign({ id: result.insertedId.toString(), email: normalizedEmail, name }, JWT_SECRET, { expiresIn: '7d' });
-
     return res.status(201).json({
       user: {
         id: result.insertedId.toString(),
@@ -785,12 +709,10 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
       token
     });
   }
-
   const existing = inMemoryUsers.find(u => u.email.toLowerCase() === normalizedEmail);
   if (existing) {
     return res.status(400).json({ error: "User already exists with this email" });
   }
-
   const newUser: User = {
     _id: Date.now().toString(),
     name,
@@ -799,10 +721,8 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
     photoUrl: photoUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
     createdAt: new Date().toISOString()
   };
-
   inMemoryUsers.push(newUser);
   const token = jwt.sign({ id: newUser._id, email: normalizedEmail, name }, JWT_SECRET, { expiresIn: '7d' });
-
   return res.status(201).json({
     user: {
       id: newUser._id,
@@ -813,21 +733,17 @@ app.post('/api/auth/register', async (req: Request, res: Response) => {
     token
   });
 });
-
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
   }
-
   const normalizedEmail = email.toLowerCase();
-
   if (db) {
     const user = await db.collection('users').findOne({ email: normalizedEmail });
     if (!user || user.password !== password) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
-
     const token = jwt.sign({ id: user._id.toString(), email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
     return res.json({
       user: {
@@ -839,12 +755,10 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
       token
     });
   }
-
   const user = inMemoryUsers.find(u => u.email.toLowerCase() === normalizedEmail);
   if (!user || (user.password && user.password !== password)) {
     return res.status(401).json({ error: "Invalid email or password" });
   }
-
   const token = jwt.sign({ id: user._id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
   return res.json({
     user: {
@@ -856,13 +770,11 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
     token
   });
 });
-
 app.post('/api/auth/google', async (req: Request, res: Response) => {
   const { email, name, photoUrl } = req.body;
   const userEmail = (email || "googleuser@booknook.com").toLowerCase();
   const userName = name || "Google User";
   const userPhoto = photoUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200";
-
   if (db) {
     let user = await db.collection('users').findOne({ email: userEmail });
     if (!user) {
@@ -875,7 +787,6 @@ app.post('/api/auth/google', async (req: Request, res: Response) => {
       const result = await db.collection('users').insertOne(newUser);
       user = { ...newUser, _id: result.insertedId };
     }
-
     const token = jwt.sign({ id: user._id.toString(), email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
     return res.json({
       user: {
@@ -887,7 +798,6 @@ app.post('/api/auth/google', async (req: Request, res: Response) => {
       token
     });
   }
-
   let user = inMemoryUsers.find(u => u.email.toLowerCase() === userEmail);
   if (!user) {
     user = {
@@ -899,7 +809,6 @@ app.post('/api/auth/google', async (req: Request, res: Response) => {
     };
     inMemoryUsers.push(user);
   }
-
   const token = jwt.sign({ id: user._id, email: user.email, name: user.name }, JWT_SECRET, { expiresIn: '7d' });
   return res.json({
     user: {
@@ -911,7 +820,6 @@ app.post('/api/auth/google', async (req: Request, res: Response) => {
     token
   });
 });
-
 app.get('/', (req: Request, res: Response) => {
   res.json({
     project: 'BookNook – A Small Online Library API',
@@ -920,5 +828,4 @@ app.get('/', (req: Request, res: Response) => {
     booksCount: 20
   });
 });
-
 export default app;

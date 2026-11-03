@@ -94,7 +94,6 @@ MONGODB_URI=your_mongodb_connection_string
 DB_NAME=booknook
 JWT_SECRET=your_jwt_secret
 ```
-
 Use your own MongoDB connection string and JWT secret. Add any other environment variables required by your server configuration.
 
 ### 4. Run the Server
