@@ -1,5 +1,4 @@
 import type { IBook } from '../models/types.js';
-
 export const initialBooks: IBook[] = [
   {
     _id: 'book_01',

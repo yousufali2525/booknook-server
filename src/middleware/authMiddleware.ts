@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
-
 export interface AuthRequest extends Request {
   user?: {
     id: string;
@@ -9,7 +8,6 @@ export interface AuthRequest extends Request {
     role: string;
   };
 }
-
 export function authMiddleware(
   req: AuthRequest,
   res: Response,
@@ -17,7 +15,6 @@ export function authMiddleware(
 ): void {
   try {
     const authHeader = req.headers.authorization;
-
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       res.status(401).json({
         success: false,
@@ -25,10 +22,8 @@ export function authMiddleware(
       });
       return;
     }
-
     const token = authHeader.split(' ')[1];
     const secret = process.env.JWT_SECRET;
-
     if (!secret) {
       res.status(500).json({
         success: false,
@@ -36,9 +31,7 @@ export function authMiddleware(
       });
       return;
     }
-
     const decoded = jwt.verify(token, secret) as JwtPayload;
-
     if (!decoded.id || !decoded.email) {
       res.status(401).json({
         success: false,
@@ -46,14 +39,12 @@ export function authMiddleware(
       });
       return;
     }
-
     req.user = {
       id: String(decoded.id),
       name: decoded.name || '',
       email: decoded.email,
       role: decoded.role || 'user',
     };
-
     next();
   } catch (error) {
     res.status(401).json({
@@ -62,7 +53,5 @@ export function authMiddleware(
     });
   }
 }
-
 export const verifyToken = authMiddleware;
-
 export default authMiddleware;

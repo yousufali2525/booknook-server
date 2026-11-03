@@ -1,5 +1,4 @@
 import mongoose, { Schema } from 'mongoose';
-
 export interface IBook {
   _id?: string;
   title: string;
@@ -15,7 +14,6 @@ export interface IBook {
   createdAt?: Date;
   updatedAt?: Date;
 }
-
 const bookSchema = new Schema<IBook>(
   {
     _id: {
@@ -76,8 +74,6 @@ const bookSchema = new Schema<IBook>(
     timestamps: true
   }
 );
-
 export const Book =
   mongoose.models.Book || mongoose.model<IBook>('Book', bookSchema);
-
 export default Book;

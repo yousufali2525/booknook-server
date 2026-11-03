@@ -2,17 +2,14 @@ import type { Response } from 'express';
 import { Book } from '../models/Book.js';
 import { Borrow } from '../models/Borrow.js';
 import type { AuthRequest } from '../middleware/authMiddleware.js';
-
 export async function borrowBook(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
   try {
     const { bookId, returnDate } = req.body;
-
     const userEmail = req.user?.email?.toLowerCase().trim();
     const userName = req.user?.name;
-
     if (!userEmail) {
       res.status(401).json({
         success: false,
@@ -20,7 +17,6 @@ export async function borrowBook(
       });
       return;
     }
-
     if (!bookId || !returnDate) {
       res.status(400).json({
         success: false,
@@ -28,12 +24,9 @@ export async function borrowBook(
       });
       return;
     }
-
     const selectedReturnDate = new Date(returnDate);
-
     if (
-      Number.isNaN(selectedReturnDate.getTime()) ||
-      selectedReturnDate <= new Date()
+      Number.isNaN(selectedReturnDate.getTime()) ||selectedReturnDate <= new Date()
     ) {
       res.status(400).json({
         success: false,
@@ -41,13 +34,7 @@ export async function borrowBook(
       });
       return;
     }
-
-    const existingBorrow = await Borrow.findOne({
-      bookId,
-      userEmail,
-      status: 'borrowed'
-    });
-
+    const existingBorrow = await Borrow.findOne({bookId,userEmail,status: 'borrowed'});
     if (existingBorrow) {
       res.status(400).json({
         success: false,
@@ -55,9 +42,7 @@ export async function borrowBook(
       });
       return;
     }
-
     const book = await Book.findById(bookId);
-
     if (!book) {
       res.status(404).json({
         success: false,
@@ -65,7 +50,6 @@ export async function borrowBook(
       });
       return;
     }
-
     const updatedBook = await Book.findOneAndUpdate(
       {
         _id: bookId,
@@ -78,7 +62,6 @@ export async function borrowBook(
         new: true
       }
     );
-
     if (!updatedBook) {
       res.status(400).json({
         success: false,
@@ -86,7 +69,6 @@ export async function borrowBook(
       });
       return;
     }
-
     try {
       const newBorrow = new Borrow({
         bookId: String(updatedBook._id),
@@ -99,9 +81,7 @@ export async function borrowBook(
         returnDate: selectedReturnDate.toISOString().split('T')[0],
         status: 'borrowed'
       });
-
       await newBorrow.save();
-
       res.status(201).json({
         success: true,
         message: 'Book borrowed successfully!',
@@ -112,27 +92,23 @@ export async function borrowBook(
         { _id: bookId },
         { $inc: { availableCopies: 1 } }
       );
-
       throw error;
     }
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Something went wrong.';
-
     res.status(500).json({
       success: false,
       message
     });
   }
 }
-
 export async function getUserBorrows(
   req: AuthRequest,
   res: Response
 ): Promise<void> {
   try {
     const userEmail = req.user?.email?.toLowerCase().trim();
-
     if (!userEmail) {
       res.status(401).json({
         success: false,
@@ -140,11 +116,9 @@ export async function getUserBorrows(
       });
       return;
     }
-
     const borrows = await Borrow.find({
       userEmail
     }).sort({ createdAt: -1 });
-
     res.json({
       success: true,
       count: borrows.length,
@@ -154,14 +128,12 @@ export async function getUserBorrows(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Something went wrong.';
-
     res.status(500).json({
       success: false,
       message
     });
   }
 }
-
 export async function returnBook(
   req: AuthRequest,
   res: Response
@@ -169,7 +141,6 @@ export async function returnBook(
   try {
     const { id } = req.params;
     const userEmail = req.user?.email?.toLowerCase().trim();
-
     if (!userEmail) {
       res.status(401).json({
         success: false,
@@ -177,7 +148,6 @@ export async function returnBook(
       });
       return;
     }
-
     const borrowRecord = await Borrow.findOneAndUpdate(
       {
         _id: id,
@@ -191,13 +161,11 @@ export async function returnBook(
         new: true
       }
     );
-
     if (!borrowRecord) {
       const existingRecord = await Borrow.findOne({
         _id: id,
         userEmail
       });
-
       if (!existingRecord) {
         res.status(404).json({
           success: false,
@@ -205,19 +173,16 @@ export async function returnBook(
         });
         return;
       }
-
       res.status(400).json({
         success: false,
         message: 'Book is already returned.'
       });
       return;
     }
-
     await Book.updateOne(
       { _id: borrowRecord.bookId },
       { $inc: { availableCopies: 1 } }
     );
-
     res.json({
       success: true,
       message: 'Book returned successfully!'
@@ -225,16 +190,10 @@ export async function returnBook(
   } catch (error) {
     const message =
       error instanceof Error ? error.message : 'Something went wrong.';
-
     res.status(500).json({
       success: false,
       message
     });
   }
 }
-
-export default {
-  borrowBook,
-  getUserBorrows,
-  returnBook
-};
+export default {borrowBook,getUserBorrows,returnBook};

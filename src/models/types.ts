@@ -12,7 +12,6 @@ export interface IBook {
   createdAt: string;
   rating?: number;
 }
-
 export interface IBorrow {
   _id: string;
   bookId: string;
@@ -24,7 +23,6 @@ export interface IBorrow {
   returnDate: string;
   status: 'active' | 'returned';
 }
-
 export interface IUser {
   _id: string;
   name: string;

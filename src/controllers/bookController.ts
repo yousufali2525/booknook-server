@@ -1,49 +1,38 @@
 import { Response } from 'express';
 import { Book } from '../models/Book.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
-
 const findBookById = async (id: string) => {
   return Book.findOne({ _id: id });
 };
-
 export async function getAllBooks(req: AuthRequest, res: Response): Promise<void> {
   try {
     const { category, search, sort, limit } = req.query;
     const filter: Record<string, any> = {};
-
     if (category && category !== 'All') {
       filter.category = {
         $regex: new RegExp(`^${String(category)}$`, 'i'),
       };
     }
-
     if (search) {
       const searchText = String(search);
-
       filter.$or = [
         { title: { $regex: searchText, $options: 'i' } },
         { author: { $regex: searchText, $options: 'i' } },
       ];
     }
-
     let query = Book.find(filter);
-
     if (sort === 'oldest') {
       query = query.sort({ createdAt: 1 });
     } else {
       query = query.sort({ createdAt: -1 });
     }
-
     if (limit) {
       const parsedLimit = Number(limit);
-
       if (Number.isInteger(parsedLimit) && parsedLimit > 0) {
         query = query.limit(parsedLimit);
       }
     }
-
     const books = await query.exec();
-
     res.json({
       success: true,
       count: books.length,
@@ -57,7 +46,6 @@ export async function getAllBooks(req: AuthRequest, res: Response): Promise<void
     });
   }
 }
-
 export async function getMyBooks(req: AuthRequest, res: Response): Promise<void> {
   try {
     if (!req.user?.email) {
@@ -67,11 +55,9 @@ export async function getMyBooks(req: AuthRequest, res: Response): Promise<void>
       });
       return;
     }
-
     const books = await Book.find({
       userEmail: req.user.email.toLowerCase(),
     }).sort({ createdAt: -1 });
-
     res.json({
       success: true,
       count: books.length,
@@ -85,11 +71,9 @@ export async function getMyBooks(req: AuthRequest, res: Response): Promise<void>
     });
   }
 }
-
 export async function getBookById(req: AuthRequest, res: Response): Promise<void> {
   try {
     const book = await findBookById(req.params.id);
-
     if (!book) {
       res.status(404).json({
         success: false,
@@ -97,7 +81,6 @@ export async function getBookById(req: AuthRequest, res: Response): Promise<void
       });
       return;
     }
-
     res.json({
       success: true,
       book,
@@ -110,7 +93,6 @@ export async function getBookById(req: AuthRequest, res: Response): Promise<void
     });
   }
 }
-
 export async function addBook(req: AuthRequest, res: Response): Promise<void> {
   try {
     if (!req.user?.id || !req.user.email) {
@@ -120,22 +102,8 @@ export async function addBook(req: AuthRequest, res: Response): Promise<void> {
       });
       return;
     }
-
-    const {
-      title,
-      author,
-      category,
-      image,
-      description,
-      totalCopies,
-    } = req.body;
-
-    if (
-      !title?.trim() ||
-      !author?.trim() ||
-      !category?.trim() ||
-      !image?.trim() ||
-      !description?.trim()
+    const {title,author,category,image,description, totalCopies,} = req.body;
+    if (!title?.trim() ||!author?.trim() ||!category?.trim() ||!image?.trim() ||!description?.trim()
     ) {
       res.status(400).json({
         success: false,
@@ -143,9 +111,7 @@ export async function addBook(req: AuthRequest, res: Response): Promise<void> {
       });
       return;
     }
-
     const copies = Number(totalCopies);
-
     if (!Number.isInteger(copies) || copies < 1) {
       res.status(400).json({
         success: false,
@@ -153,7 +119,6 @@ export async function addBook(req: AuthRequest, res: Response): Promise<void> {
       });
       return;
     }
-
     const newBook = new Book({
       _id: `book_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       title: title.trim(),
@@ -167,9 +132,7 @@ export async function addBook(req: AuthRequest, res: Response): Promise<void> {
       userEmail: req.user.email.toLowerCase(),
       rating: 5,
     });
-
     const savedBook = await newBook.save();
-
     res.status(201).json({
       success: true,
       message: 'Book added successfully!',
@@ -183,7 +146,6 @@ export async function addBook(req: AuthRequest, res: Response): Promise<void> {
     });
   }
 }
-
 export async function updateBook(req: AuthRequest, res: Response): Promise<void> {
   try {
     if (!req.user?.email) {
@@ -193,12 +155,10 @@ export async function updateBook(req: AuthRequest, res: Response): Promise<void>
       });
       return;
     }
-
     const book = await Book.findOne({
       _id: req.params.id,
       userEmail: req.user.email.toLowerCase(),
     });
-
     if (!book) {
       res.status(404).json({
         success: false,
@@ -206,9 +166,7 @@ export async function updateBook(req: AuthRequest, res: Response): Promise<void>
       });
       return;
     }
-
     const { title, author, category, image, description, totalCopies } = req.body;
-
     if (title !== undefined) {
       if (typeof title !== 'string' || !title.trim()) {
         res.status(400).json({ success: false, message: 'Invalid book title.' });
@@ -216,7 +174,6 @@ export async function updateBook(req: AuthRequest, res: Response): Promise<void>
       }
       book.title = title.trim();
     }
-
     if (author !== undefined) {
       if (typeof author !== 'string' || !author.trim()) {
         res.status(400).json({ success: false, message: 'Invalid author name.' });
@@ -224,7 +181,6 @@ export async function updateBook(req: AuthRequest, res: Response): Promise<void>
       }
       book.author = author.trim();
     }
-
     if (category !== undefined) {
       if (typeof category !== 'string' || !category.trim()) {
         res.status(400).json({ success: false, message: 'Invalid category.' });
@@ -232,7 +188,6 @@ export async function updateBook(req: AuthRequest, res: Response): Promise<void>
       }
       book.category = category.trim();
     }
-
     if (image !== undefined) {
       if (typeof image !== 'string' || !image.trim()) {
         res.status(400).json({ success: false, message: 'Invalid image URL.' });
@@ -240,7 +195,6 @@ export async function updateBook(req: AuthRequest, res: Response): Promise<void>
       }
       book.image = image.trim();
     }
-
     if (description !== undefined) {
       if (typeof description !== 'string' || !description.trim()) {
         res.status(400).json({ success: false, message: 'Invalid description.' });
@@ -248,10 +202,8 @@ export async function updateBook(req: AuthRequest, res: Response): Promise<void>
       }
       book.description = description.trim();
     }
-
     if (totalCopies !== undefined) {
       const newTotalCopies = Number(totalCopies);
-
       if (!Number.isInteger(newTotalCopies) || newTotalCopies < 1) {
         res.status(400).json({
           success: false,
@@ -259,9 +211,7 @@ export async function updateBook(req: AuthRequest, res: Response): Promise<void>
         });
         return;
       }
-
       const borrowedCopies = book.totalCopies - book.availableCopies;
-
       if (newTotalCopies < borrowedCopies) {
         res.status(400).json({
           success: false,
@@ -269,13 +219,10 @@ export async function updateBook(req: AuthRequest, res: Response): Promise<void>
         });
         return;
       }
-
       book.totalCopies = newTotalCopies;
       book.availableCopies = newTotalCopies - borrowedCopies;
     }
-
     const updatedBook = await book.save();
-
     res.json({
       success: true,
       message: 'Book updated successfully!',
@@ -289,7 +236,6 @@ export async function updateBook(req: AuthRequest, res: Response): Promise<void>
     });
   }
 }
-
 export async function deleteBook(req: AuthRequest, res: Response): Promise<void> {
   try {
     if (!req.user?.email) {
@@ -299,12 +245,10 @@ export async function deleteBook(req: AuthRequest, res: Response): Promise<void>
       });
       return;
     }
-
     const deletedBook = await Book.findOneAndDelete({
       _id: req.params.id,
       userEmail: req.user.email.toLowerCase(),
     });
-
     if (!deletedBook) {
       res.status(404).json({
         success: false,
@@ -312,7 +256,6 @@ export async function deleteBook(req: AuthRequest, res: Response): Promise<void>
       });
       return;
     }
-
     res.json({
       success: true,
       message: 'Book deleted successfully!',
@@ -324,12 +267,4 @@ export async function deleteBook(req: AuthRequest, res: Response): Promise<void>
     });
   }
 }
-
-export default {
-  getAllBooks,
-  getMyBooks,
-  getBookById,
-  addBook,
-  updateBook,
-  deleteBook,
-};
+export default {getAllBooks,getMyBooks,getBookById,addBook,updateBook,deleteBook};

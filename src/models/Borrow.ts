@@ -1,5 +1,4 @@
 import mongoose, { Schema, Document } from 'mongoose';
-
 export interface IBorrow extends Document {
   bookId: string;
   bookTitle: string;
@@ -13,7 +12,6 @@ export interface IBorrow extends Document {
   createdAt?: Date;
   updatedAt?: Date;
 }
-
 const borrowSchema = new Schema<IBorrow>(
   {
     bookId: {
@@ -64,9 +62,6 @@ const borrowSchema = new Schema<IBorrow>(
     timestamps: true
   }
 );
-
 export const Borrow =
-  mongoose.models.Borrow ||
-  mongoose.model<IBorrow>('Borrow', borrowSchema);
-
+  mongoose.models.Borrow ||mongoose.model<IBorrow>('Borrow', borrowSchema);
 export default Borrow;
