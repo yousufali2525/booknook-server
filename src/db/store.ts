@@ -240,7 +240,7 @@ export const dbStore = {
       }
     } catch (e) {}
     const db = loadDatabase();
-    return db.users.find(u => u._id === id) || null;
+    return db.users.find(u => u._id ===id) || null;
   },
   async createUser(data: { name: string; email: string; photoURL: string; passwordHash?: string }): Promise<IUser> {
     let mongoId = 'user_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
