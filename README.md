@@ -90,10 +90,14 @@ Create a `.env` file in the project root.
 
 ```env
 PORT=5000
+CLIENT_URL=http://localhost:3000
 MONGODB_URI=your_mongodb_connection_string
 DB_NAME=booknook
+IMGBB_API_KEY=your_imgbb_api_key
 JWT_SECRET=your_jwt_secret
+IMGBB_API_URL=https://api.imgbb.com/1/upload
 ```
+
 Use your own MongoDB connection string and JWT secret. Add any other environment variables required by your server configuration.
 
 ### 4. Run the Server
